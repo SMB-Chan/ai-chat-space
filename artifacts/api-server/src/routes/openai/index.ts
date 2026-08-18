@@ -1,0 +1,183 @@
+import { Router, type IRouter } from "express";
+import { desc, eq } from "drizzle-orm";
+import { db, conversations, messages } from "@workspace/db";
+import { openai } from "@workspace/integrations-openai-ai-server";
+import {
+  CreateOpenaiConversationBody,
+  GetOpenaiConversationParams,
+  DeleteOpenaiConversationParams,
+  ListOpenaiMessagesParams,
+  SendOpenaiMessageParams,
+  SendOpenaiMessageBody,
+} from "@workspace/api-zod";
+import { logger } from "../../lib/logger";
+
+const router: IRouter = Router();
+
+// List all conversations
+router.get("/openai/conversations", async (_req, res): Promise<void> => {
+  const rows = await db
+    .select()
+    .from(conversations)
+    .orderBy(desc(conversations.createdAt));
+  res.json(rows);
+});
+
+// Create a conversation
+router.post("/openai/conversations", async (req, res): Promise<void> => {
+  const parsed = CreateOpenaiConversationBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  const [conv] = await db
+    .insert(conversations)
+    .values({ title: parsed.data.title })
+    .returning();
+  res.status(201).json(conv);
+});
+
+// Get conversation with messages
+router.get("/openai/conversations/:id", async (req, res): Promise<void> => {
+  const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const params = GetOpenaiConversationParams.safeParse({ id: rawId });
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+  const [conv] = await db
+    .select()
+    .from(conversations)
+    .where(eq(conversations.id, params.data.id));
+  if (!conv) {
+    res.status(404).json({ error: "Conversation not found" });
+    return;
+  }
+  const msgs = await db
+    .select()
+    .from(messages)
+    .where(eq(messages.conversationId, params.data.id))
+    .orderBy(messages.createdAt);
+  res.json({ ...conv, messages: msgs });
+});
+
+// Delete conversation
+router.delete("/openai/conversations/:id", async (req, res): Promise<void> => {
+  const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const params = DeleteOpenaiConversationParams.safeParse({ id: rawId });
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+  const [deleted] = await db
+    .delete(conversations)
+    .where(eq(conversations.id, params.data.id))
+    .returning();
+  if (!deleted) {
+    res.status(404).json({ error: "Conversation not found" });
+    return;
+  }
+  res.sendStatus(204);
+});
+
+// List messages in a conversation
+router.get("/openai/conversations/:id/messages", async (req, res): Promise<void> => {
+  const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const params = ListOpenaiMessagesParams.safeParse({ id: rawId });
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+  const msgs = await db
+    .select()
+    .from(messages)
+    .where(eq(messages.conversationId, params.data.id))
+    .orderBy(messages.createdAt);
+  res.json(msgs);
+});
+
+// Send message — streaming SSE response
+router.post("/openai/conversations/:id/messages", async (req, res): Promise<void> => {
+  const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const params = SendOpenaiMessageParams.safeParse({ id: rawId });
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+  const body = SendOpenaiMessageBody.safeParse(req.body);
+  if (!body.success) {
+    res.status(400).json({ error: body.error.message });
+    return;
+  }
+
+  const conversationId = params.data.id;
+  const userContent = body.data.content;
+
+  // Ensure conversation exists
+  const [conv] = await db
+    .select()
+    .from(conversations)
+    .where(eq(conversations.id, conversationId));
+  if (!conv) {
+    res.status(404).json({ error: "Conversation not found" });
+    return;
+  }
+
+  // Save user message
+  await db.insert(messages).values({
+    conversationId,
+    role: "user",
+    content: userContent,
+  });
+
+  // Load full history for context
+  const history = await db
+    .select()
+    .from(messages)
+    .where(eq(messages.conversationId, conversationId))
+    .orderBy(messages.createdAt);
+
+  const chatMessages = history.map((m) => ({
+    role: m.role as "user" | "assistant" | "system",
+    content: m.content,
+  }));
+
+  // Set up SSE
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+
+  let fullResponse = "";
+  try {
+    const stream = await openai.chat.completions.create({
+      model: "gpt-5.6-terra",
+      max_completion_tokens: 8192,
+      messages: chatMessages,
+      stream: true,
+    });
+
+    for await (const chunk of stream) {
+      const content = chunk.choices[0]?.delta?.content;
+      if (content) {
+        fullResponse += content;
+        res.write(`data: ${JSON.stringify({ content })}\n\n`);
+      }
+    }
+
+    // Save assistant message
+    await db.insert(messages).values({
+      conversationId,
+      role: "assistant",
+      content: fullResponse,
+    });
+
+    res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+  } catch (err) {
+    logger.error({ err }, "Error streaming OpenAI response");
+    res.write(`data: ${JSON.stringify({ error: "AI response failed" })}\n\n`);
+  }
+
+  res.end();
+});
+
+export default router;
