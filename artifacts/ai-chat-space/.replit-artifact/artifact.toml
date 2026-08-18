@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "AI Chat Space"
+description = "ファイルを添付して内容について質問できる、個人向けのAIチャットスペースです。"
+version = "1.0.0"
+id = "artifacts/ai-chat-space"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19082
+
+[services.development]
+run = "pnpm --filter @workspace/ai-chat-space run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/ai-chat-space", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/ai-chat-space/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19082"
+BASE_PATH = "/"
