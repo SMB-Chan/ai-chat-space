@@ -1,7 +1,7 @@
 import { Router, type IRouter } from "express";
 import { desc, eq } from "drizzle-orm";
 import { db, conversations, messages } from "@workspace/db";
-import { openai } from "@workspace/integrations-openai-ai-server";
+import { getClientForModel, AVAILABLE_MODELS } from "../../lib/ai-clients";
 import {
   CreateOpenaiConversationBody,
   GetOpenaiConversationParams,
@@ -13,6 +13,11 @@ import {
 import { logger } from "../../lib/logger";
 
 const router: IRouter = Router();
+
+// List available models
+router.get("/openai/models", async (_req, res): Promise<void> => {
+  res.json(AVAILABLE_MODELS);
+});
 
 // List all conversations
 router.get("/openai/conversations", async (_req, res): Promise<void> => {
@@ -97,6 +102,7 @@ router.get("/openai/conversations/:id/messages", async (req, res): Promise<void>
 });
 
 // Send message — streaming SSE response
+// Accepts optional ?model= query param to select the AI model
 router.post("/openai/conversations/:id/messages", async (req, res): Promise<void> => {
   const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const params = SendOpenaiMessageParams.safeParse({ id: rawId });
@@ -112,6 +118,16 @@ router.post("/openai/conversations/:id/messages", async (req, res): Promise<void
 
   const conversationId = params.data.id;
   const userContent = body.data.content;
+  const modelId = typeof req.query.model === "string" ? req.query.model : "gpt-5.6-terra";
+
+  // Resolve client for the requested model
+  let aiClient: ReturnType<typeof getClientForModel>;
+  try {
+    aiClient = getClientForModel(modelId);
+  } catch (err) {
+    res.status(400).json({ error: (err as Error).message });
+    return;
+  }
 
   // Ensure conversation exists
   const [conv] = await db
@@ -149,12 +165,18 @@ router.post("/openai/conversations/:id/messages", async (req, res): Promise<void
 
   let fullResponse = "";
   try {
-    const stream = await openai.chat.completions.create({
-      model: "gpt-5.6-terra",
-      max_completion_tokens: 8192,
+    const streamOptions: Parameters<typeof aiClient.client.chat.completions.create>[0] = {
+      model: modelId,
       messages: chatMessages,
       stream: true,
-    });
+    };
+
+    // o4-mini doesn't support max_tokens in the same way — use max_completion_tokens only for non-o-series
+    if (!modelId.startsWith("o")) {
+      (streamOptions as Record<string, unknown>).max_tokens = 8192;
+    }
+
+    const stream = await aiClient.client.chat.completions.create(streamOptions);
 
     for await (const chunk of stream) {
       const content = chunk.choices[0]?.delta?.content;
@@ -173,8 +195,9 @@ router.post("/openai/conversations/:id/messages", async (req, res): Promise<void
 
     res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
   } catch (err) {
-    logger.error({ err }, "Error streaming OpenAI response");
-    res.write(`data: ${JSON.stringify({ error: "AI response failed" })}\n\n`);
+    logger.error({ err, modelId }, "Error streaming AI response");
+    const msg = err instanceof Error ? err.message : "AI response failed";
+    res.write(`data: ${JSON.stringify({ error: msg })}\n\n`);
   }
 
   res.end();

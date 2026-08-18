@@ -1,0 +1,22 @@
+{
+  "name": "AI Chat Space",
+  "short_name": "AI Space",
+  "description": "ファイルを添付して質問できる、個人向けのAIチャットスペース。",
+  "lang": "ja",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0b0d12",
+  "theme_color": "#0b0d12",
+  "categories": ["productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/pwa-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

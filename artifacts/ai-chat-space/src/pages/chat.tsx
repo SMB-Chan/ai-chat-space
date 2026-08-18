@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { 
@@ -10,32 +10,37 @@ import {
 } from "@workspace/api-client-react";
 import { MessageFeed } from "@/components/chat/message-feed";
 import { MessageInput } from "@/components/chat/message-input";
+import { ModelSelector } from "@/components/chat/model-selector";
 import { Sparkles } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 async function streamMessage(
-  conversationId: number, 
-  content: string, 
-  onChunk: (text: string) => void, 
+  conversationId: number,
+  content: string,
+  model: string,
+  onChunk: (text: string) => void,
   onDone: () => void,
   onError: (err: Error) => void
 ) {
   try {
-    const res = await fetch(`${BASE}/api/openai/conversations/${conversationId}/messages`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content }),
-    });
-    
+    const res = await fetch(
+      `${BASE}/api/openai/conversations/${conversationId}/messages?model=${encodeURIComponent(model)}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+      }
+    );
+
     if (!res.ok) {
       throw new Error(`Failed to send message: ${res.statusText}`);
     }
-    
+
     const reader = res.body!.getReader();
     const decoder = new TextDecoder();
     let buffer = "";
-    
+
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
@@ -47,6 +52,7 @@ async function streamMessage(
           try {
             const parsed = JSON.parse(line.slice(6));
             if (parsed.content) onChunk(parsed.content);
+            if (parsed.error) onError(new Error(parsed.error));
             if (parsed.done) onDone();
           } catch {}
         }
@@ -63,21 +69,24 @@ export function ChatPage() {
   const [_, setLocation] = useLocation();
   const conversationId = params.id ? parseInt(params.id) : null;
   const queryClient = useQueryClient();
-  
-  const { data: conversation, isLoading, isError } = useGetOpenaiConversation(
+
+  const [selectedModel, setSelectedModel] = useState("gpt-5.6-terra");
+
+  const { data: conversation, isLoading } = useGetOpenaiConversation(
     conversationId as number,
     { query: { enabled: !!conversationId, queryKey: getGetOpenaiConversationQueryKey(conversationId as number) } }
   );
 
   const createConversation = useCreateOpenaiConversation();
-  
+
   const [streamingContent, setStreamingContent] = useState<string>("");
   const [isStreaming, setIsStreaming] = useState(false);
+  const [streamError, setStreamError] = useState<string | null>(null);
   const [optimisticUserMessage, setOptimisticUserMessage] = useState<OpenaiMessage | null>(null);
 
   const handleSend = async (content: string, fileData?: { name: string; content: string; isBase64: boolean }) => {
     let finalContent = content;
-    
+
     if (fileData) {
       if (fileData.isBase64) {
         finalContent = `[Image: ${fileData.name}]\n\n${fileData.content}\n\n---\n\nUser question: ${content}`;
@@ -88,31 +97,27 @@ export function ChatPage() {
 
     let targetId = conversationId;
 
-    // Create a new conversation if we don't have one
     if (!targetId) {
       const title = content.split(" ").slice(0, 4).join(" ") + (content.split(" ").length > 4 ? "..." : "");
       try {
         const newConv = await createConversation.mutateAsync({ data: { title: title || "New Conversation" } });
         targetId = newConv.id;
         queryClient.invalidateQueries({ queryKey: getListOpenaiConversationsQueryKey() });
-        // We do not navigate yet to avoid unmounting the component during stream, or we can navigate and keep state.
-        // Actually, better to navigate immediately but replace history so it doesn't break back button
         setLocation(`/conversations/${newConv.id}`, { replace: true });
-      } catch (err) {
-        console.error("Failed to create conversation", err);
+      } catch {
         return;
       }
     }
 
     if (!targetId) return;
 
-    // Set optimistic user message
+    setStreamError(null);
     setOptimisticUserMessage({
       id: Date.now(),
       conversationId: targetId,
       role: "user",
       content: finalContent,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
     });
 
     setIsStreaming(true);
@@ -121,6 +126,7 @@ export function ChatPage() {
     streamMessage(
       targetId,
       finalContent,
+      selectedModel,
       (chunk) => {
         setStreamingContent((prev) => prev + chunk);
       },
@@ -130,9 +136,9 @@ export function ChatPage() {
         queryClient.invalidateQueries({ queryKey: getGetOpenaiConversationQueryKey(targetId!) });
       },
       (err) => {
-        console.error("Stream error:", err);
         setIsStreaming(false);
         setOptimisticUserMessage(null);
+        setStreamError(err.message);
       }
     );
   };
@@ -140,13 +146,15 @@ export function ChatPage() {
   const allMessages = [
     ...(conversation?.messages || []),
     ...(optimisticUserMessage ? [optimisticUserMessage] : []),
-    ...(isStreaming ? [{
-      id: Date.now() + 1,
-      conversationId: conversationId || 0,
-      role: "assistant",
-      content: streamingContent,
-      createdAt: new Date().toISOString()
-    }] : [])
+    ...(isStreaming || streamingContent
+      ? [{
+          id: Date.now() + 1,
+          conversationId: conversationId || 0,
+          role: "assistant",
+          content: streamingContent,
+          createdAt: new Date().toISOString(),
+        }]
+      : []),
   ];
 
   return (
@@ -165,16 +173,34 @@ export function ChatPage() {
             </p>
           </div>
         ) : (
-          <MessageFeed 
-            messages={allMessages} 
-            isLoading={isLoading && !isStreaming && allMessages.length === 0} 
+          <MessageFeed
+            messages={allMessages}
+            isLoading={isLoading && !isStreaming && allMessages.length === 0}
           />
         )}
       </div>
-      
+
+      {streamError && (
+        <div className="mx-4 md:mx-6 mb-2 max-w-3xl mx-auto w-full">
+          <div className="px-4 py-2 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-sm">
+            エラー: {streamError}
+          </div>
+        </div>
+      )}
+
       <div className="p-4 md:p-6 bg-gradient-to-t from-background via-background to-transparent pt-10">
-        <div className="max-w-3xl mx-auto">
-          <MessageInput onSend={handleSend} disabled={isStreaming || createConversation.isPending} />
+        <div className="max-w-3xl mx-auto space-y-2">
+          <div className="flex items-center gap-2 px-1">
+            <ModelSelector
+              selectedModel={selectedModel}
+              onSelect={setSelectedModel}
+              disabled={isStreaming || createConversation.isPending}
+            />
+          </div>
+          <MessageInput
+            onSend={handleSend}
+            disabled={isStreaming || createConversation.isPending}
+          />
         </div>
       </div>
     </div>
