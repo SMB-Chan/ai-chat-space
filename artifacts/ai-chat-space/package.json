@@ -81,7 +81,7 @@
     "vitest": "^3.2.4"
   },
   "dependencies": {
-    "@clerk/react": "^6.14.3",
+    "@clerk/react": "^6.15.1",
     "@clerk/themes": "^2.4.57"
   }
 }
