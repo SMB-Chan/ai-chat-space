@@ -137,7 +137,10 @@ export function truncateTextMiddle(text: string, targetChars: number): string {
   return `${head}${TRUNCATION_MARK}${tail}`;
 }
 
-function truncateContentToTokens(content: unknown, targetTokens: number): unknown {
+function truncateContentToTokens(
+  content: unknown,
+  targetTokens: number,
+): unknown {
   if (typeof content === "string") {
     return truncateTextMiddle(
       content,
@@ -175,7 +178,11 @@ function resolveEffectiveBudget(options: HistoryBudgetOptions): number {
     return Math.max(1, Math.floor(options.maxTokens));
   }
   if (options.maxChars !== undefined) {
-    return Math.max(1, estimateTokens("x".repeat(Math.max(1, options.maxChars))));
+    const boundedChars = Math.min(
+      MAX_HISTORY_CHAR_BUDGET,
+      Math.max(1, Math.floor(options.maxChars)),
+    );
+    return Math.max(1, estimateTokens("x".repeat(boundedChars)));
   }
   return resolveHistoryTokenBudget();
 }
