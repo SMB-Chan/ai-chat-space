@@ -1,0 +1,517 @@
+@media (max-width: 767px) {
+  .chatgpt-mobile-shell {
+    --chatgpt-mobile-topbar-height: calc(96px + env(safe-area-inset-top));
+    position: relative;
+    height: 100dvh;
+    overflow: hidden;
+    background: #000;
+    color: #f4f4f4;
+  }
+
+  .chatgpt-mobile-shell > .m3-surface {
+    background: #000 !important;
+  }
+
+  .chatgpt-mobile-shell > .m3-surface > .ambient-grid,
+  .chatgpt-mobile-shell > .m3-surface > aside,
+  .chatgpt-mobile-shell > .m3-surface > main > header {
+    display: none !important;
+  }
+
+  .chatgpt-mobile-shell > .m3-surface > main {
+    box-sizing: border-box;
+    min-width: 0;
+    padding-top: var(--chatgpt-mobile-topbar-height);
+    background: #000 !important;
+  }
+
+  .chatgpt-mobile-topbar {
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: 70;
+    display: flex;
+    height: var(--chatgpt-mobile-topbar-height);
+    align-items: flex-end;
+    justify-content: center;
+    padding: env(safe-area-inset-top) 18px 16px;
+    pointer-events: none;
+    background: linear-gradient(to bottom, #000 0%, #000 76%, rgba(0, 0, 0, 0) 100%);
+  }
+
+  .chatgpt-mobile-menu-button {
+    position: absolute;
+    left: 22px;
+    bottom: 14px;
+    display: grid;
+    width: 58px;
+    height: 58px;
+    place-items: center;
+    border: 1px solid #414141;
+    border-radius: 999px;
+    background: #202020;
+    color: #f5f5f5;
+    pointer-events: auto;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.32);
+  }
+
+  .chatgpt-mobile-menu-button svg {
+    width: 25px;
+    height: 25px;
+    stroke-width: 2;
+  }
+
+  .chatgpt-mobile-segment {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: min(340px, calc(100vw - 182px));
+    min-width: 220px;
+    height: 58px;
+    padding: 5px;
+    border-radius: 999px;
+    background: #3c3c3c;
+    pointer-events: auto;
+  }
+
+  .chatgpt-mobile-segment button {
+    min-width: 0;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: #fff;
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    transition: background-color 160ms ease, transform 160ms ease;
+  }
+
+  .chatgpt-mobile-segment button:active {
+    transform: scale(0.98);
+  }
+
+  .chatgpt-mobile-segment button.is-active {
+    background: #242424;
+  }
+
+  .chatgpt-work-panel {
+    position: fixed;
+    inset: var(--chatgpt-mobile-topbar-height) 0 0;
+    z-index: 55;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: #000;
+  }
+
+  .chatgpt-work-list {
+    flex: 1;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: clamp(54px, 8vh, 98px) 34px 176px;
+  }
+
+  .chatgpt-work-item {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr) 24px;
+    width: 100%;
+    align-items: center;
+    gap: 14px;
+    min-height: 78px;
+    border: 0;
+    background: transparent;
+    color: #d7d7d7;
+    text-align: left;
+    transition: background-color 150ms ease, color 150ms ease;
+  }
+
+  .chatgpt-work-item:active {
+    color: #fff;
+    background: #111;
+  }
+
+  .chatgpt-work-icon {
+    display: grid;
+    place-items: center;
+    color: #fff;
+  }
+
+  .chatgpt-work-icon svg {
+    width: 25px;
+    height: 25px;
+  }
+
+  .chatgpt-work-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: clamp(18px, 4.6vw, 22px);
+    font-weight: 400;
+    letter-spacing: -0.015em;
+  }
+
+  .chatgpt-work-chevron {
+    width: 18px;
+    height: 18px;
+    color: #555;
+  }
+
+  .chatgpt-work-empty {
+    display: flex;
+    min-height: 48vh;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: #9b9b9b;
+    text-align: center;
+  }
+
+  .chatgpt-work-empty > svg {
+    width: 34px;
+    height: 34px;
+    color: #ccc;
+  }
+
+  .chatgpt-work-empty p {
+    margin: 4px 0 0;
+    color: #ddd;
+    font-size: 17px;
+  }
+
+  .chatgpt-work-empty span {
+    max-width: 280px;
+    font-size: 13px;
+  }
+
+  .chatgpt-work-composer {
+    position: absolute;
+    right: 18px;
+    bottom: calc(18px + env(safe-area-inset-bottom));
+    left: 18px;
+    display: flex;
+    min-height: 154px;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 24px 18px 14px;
+    border: 1px solid #3b3b3b;
+    border-radius: 31px;
+    background: #212121;
+    color: #fff;
+    text-align: left;
+    box-shadow: 0 14px 42px rgba(0, 0, 0, 0.38);
+  }
+
+  .chatgpt-work-placeholder {
+    color: #b7b7b7;
+    font-size: 18px;
+    font-weight: 400;
+  }
+
+  .chatgpt-work-composer-row {
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr) 44px 48px;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .chatgpt-work-plus,
+  .chatgpt-work-mic,
+  .chatgpt-work-send {
+    display: grid;
+    place-items: center;
+  }
+
+  .chatgpt-work-plus svg {
+    width: 32px;
+    height: 32px;
+    stroke-width: 1.8;
+  }
+
+  .chatgpt-work-mic svg {
+    width: 26px;
+    height: 26px;
+  }
+
+  .chatgpt-work-send {
+    width: 46px;
+    height: 46px;
+    border-radius: 999px;
+    background: #424242;
+    color: #a8a8a8;
+  }
+
+  .chatgpt-work-send svg {
+    width: 25px;
+    height: 25px;
+  }
+
+  .chatgpt-work-model {
+    justify-self: center;
+    color: #f2f2f2;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .chatgpt-mobile-menu-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+  }
+
+  .chatgpt-mobile-menu-backdrop {
+    position: absolute;
+    inset: 0;
+    border: 0;
+    background: rgba(0, 0, 0, 0.58);
+    backdrop-filter: blur(2px);
+  }
+
+  .chatgpt-mobile-menu {
+    position: absolute;
+    inset: 0 auto 0 0;
+    display: flex;
+    width: min(86vw, 390px);
+    flex-direction: column;
+    padding: calc(18px + env(safe-area-inset-top)) 14px calc(12px + env(safe-area-inset-bottom));
+    border-right: 1px solid #333;
+    background: #171717;
+    box-shadow: 22px 0 48px rgba(0, 0, 0, 0.46);
+    animation: chatgpt-menu-enter 180ms ease-out;
+  }
+
+  @keyframes chatgpt-menu-enter {
+    from {
+      transform: translateX(-18px);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  .chatgpt-mobile-menu-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 6px 18px;
+  }
+
+  .chatgpt-mobile-menu-head > div {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .chatgpt-mobile-menu-head strong {
+    font-size: 18px;
+    font-weight: 650;
+  }
+
+  .chatgpt-mobile-menu-head span {
+    color: #8d8d8d;
+    font-size: 12px;
+  }
+
+  .chatgpt-mobile-menu-head button {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    border: 0;
+    border-radius: 999px;
+    background: #252525;
+    color: #ddd;
+  }
+
+  .chatgpt-mobile-menu-head button svg {
+    width: 21px;
+    height: 21px;
+  }
+
+  .chatgpt-mobile-menu-actions {
+    display: grid;
+    gap: 4px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #2e2e2e;
+  }
+
+  .chatgpt-mobile-menu-actions button,
+  .chatgpt-mobile-menu-history button,
+  .chatgpt-mobile-logout {
+    display: flex;
+    width: 100%;
+    min-height: 48px;
+    align-items: center;
+    gap: 12px;
+    padding: 0 13px;
+    border: 0;
+    border-radius: 14px;
+    background: transparent;
+    color: #d9d9d9;
+    text-align: left;
+  }
+
+  .chatgpt-mobile-menu-actions button:active,
+  .chatgpt-mobile-menu-history button:active,
+  .chatgpt-mobile-menu-actions button.is-active,
+  .chatgpt-mobile-menu-history button.is-active {
+    background: #2b2b2b;
+    color: #fff;
+  }
+
+  .chatgpt-mobile-menu-actions svg,
+  .chatgpt-mobile-menu-history svg,
+  .chatgpt-mobile-logout svg {
+    width: 19px;
+    height: 19px;
+    flex: 0 0 auto;
+  }
+
+  .chatgpt-mobile-menu-history {
+    min-height: 0;
+    flex: 1;
+    overflow-y: auto;
+    padding-top: 14px;
+  }
+
+  .chatgpt-mobile-menu-history button span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .chatgpt-mobile-menu-label {
+    padding: 0 12px 8px;
+    color: #777;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+  }
+
+  .chatgpt-mobile-menu-muted {
+    padding: 12px;
+    color: #7f7f7f;
+    font-size: 13px;
+  }
+
+  .chatgpt-mobile-logout {
+    margin-top: 10px;
+    color: #aaa;
+  }
+
+  /* Bring the existing composer closer to the reference UI without changing
+     its chat, attachment, voice, translation, audit, or generation logic. */
+  .chatgpt-mobile-shell [data-testid="composer"] {
+    overflow: visible;
+    border: 1px solid #393939 !important;
+    border-radius: 30px !important;
+    background: #212121 !important;
+    box-shadow: 0 12px 34px rgba(0, 0, 0, 0.28) !important;
+  }
+
+  .chatgpt-mobile-shell [data-testid="composer"]:focus-within {
+    border-color: #494949 !important;
+    box-shadow: 0 12px 34px rgba(0, 0, 0, 0.32) !important;
+  }
+
+  .chatgpt-mobile-shell [data-testid="composer-textarea"] {
+    min-height: 58px;
+    padding: 17px 18px 4px !important;
+    color: #f5f5f5;
+    font-size: 16px;
+    line-height: 1.45;
+  }
+
+  .chatgpt-mobile-shell [data-testid="composer-textarea"]::placeholder {
+    color: #a8a8a8;
+    opacity: 1;
+  }
+
+  .chatgpt-mobile-shell [data-testid="composer-attach"] {
+    width: 42px !important;
+    height: 42px !important;
+    color: #fff !important;
+  }
+
+  .chatgpt-mobile-shell [data-testid="composer-attach"] > svg {
+    display: none;
+  }
+
+  .chatgpt-mobile-shell [data-testid="composer-attach"]::before {
+    content: "+";
+    display: block;
+    margin-top: -2px;
+    font-size: 34px;
+    font-weight: 250;
+    line-height: 1;
+  }
+
+  .chatgpt-mobile-shell [data-testid="composer-send"] {
+    width: 44px !important;
+    height: 44px !important;
+    border-radius: 999px !important;
+  }
+
+  .chatgpt-mobile-shell [data-testid="composer"] div:has(> [data-testid="button-model-selector"]) {
+    display: block !important;
+  }
+
+  .chatgpt-mobile-shell [data-testid="button-model-selector"] {
+    max-width: min(48vw, 220px);
+    border: 0 !important;
+    background: transparent !important;
+    color: #f1f1f1 !important;
+    font-size: 14px !important;
+    font-weight: 650 !important;
+  }
+
+  .chatgpt-mobile-shell [data-testid="button-model-selector"] > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .chatgpt-mobile-shell [data-testid="composer-tools-toggle"] {
+    border-color: transparent !important;
+    background: transparent !important;
+    color: #d0d0d0 !important;
+  }
+
+  /* Existing responsive selectors already use a Drawer on mobile. Re-skin it
+     into the large rounded settings sheet shown in the reference. */
+  .responsive-selection-sheet {
+    max-height: 84dvh !important;
+    border: 1px solid #393939 !important;
+    border-bottom: 0 !important;
+    border-radius: 32px 32px 0 0 !important;
+    background: #232323 !important;
+    color: #f5f5f5 !important;
+    box-shadow: 0 -18px 60px rgba(0, 0, 0, 0.46) !important;
+  }
+
+  .responsive-selection-sheet::after {
+    background: #5b5b5b !important;
+  }
+
+  .responsive-selection-sheet [data-testid^="model-option-"] {
+    min-height: 66px !important;
+    margin-bottom: 3px;
+    border-radius: 4px !important;
+    background: #454545;
+    color: #f6f6f6;
+  }
+
+  .responsive-selection-sheet [data-testid^="model-option-"][aria-current="true"] {
+    background: #4b4b4b !important;
+    color: #fff !important;
+  }
+
+  .responsive-selection-sheet input[type="text"] {
+    min-height: 48px;
+    border-color: #4a4a4a !important;
+    border-radius: 16px !important;
+    background: #303030 !important;
+    color: #fff !important;
+  }
+}

@@ -20,7 +20,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import AdminPage from "@/pages/admin";
-import { ChatLayout } from "@/components/layout/chat-layout";
+import { AdaptiveChatLayout } from "@/components/layout/adaptive-chat-layout";
 import { ChatPage } from "@/pages/chat";
 import { HomePage } from "@/pages/home";
 import { SettingsPage } from "@/pages/settings";
@@ -225,9 +225,9 @@ function ProtectedChat({ children }: { children: ReactNode }) {
     <>
       <Show when="signed-in">
         <AccessGate>
-          <ChatLayout>
+          <AdaptiveChatLayout>
             <RoutedErrorBoundary>{children}</RoutedErrorBoundary>
-          </ChatLayout>
+          </AdaptiveChatLayout>
         </AccessGate>
       </Show>
       <Show when="signed-out">
