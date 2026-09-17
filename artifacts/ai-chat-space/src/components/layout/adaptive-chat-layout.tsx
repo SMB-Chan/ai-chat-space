@@ -164,9 +164,7 @@ export function AdaptiveChatLayout({ children }: AdaptiveChatLayoutProps) {
             onClick={focusComposer}
             aria-label="Chatで新しい作業を始める"
           >
-            <span className="chatgpt-work-placeholder">
-              ChatGPT と作業する
-            </span>
+            <span className="chatgpt-work-placeholder">ChatGPT と作業する</span>
             <span className="chatgpt-work-composer-row">
               <span className="chatgpt-work-plus" aria-hidden="true">
                 <Plus />
@@ -234,9 +232,7 @@ export function AdaptiveChatLayout({ children }: AdaptiveChatLayoutProps) {
                   <button
                     key={conversation.id}
                     type="button"
-                    className={cn(
-                      activeId === conversation.id && "is-active",
-                    )}
+                    className={cn(activeId === conversation.id && "is-active")}
                     onClick={() =>
                       openChat(`/conversations/${conversation.id}`)
                     }
