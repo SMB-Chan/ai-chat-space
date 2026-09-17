@@ -27,7 +27,13 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm run format:check
+      - name: Format check (diagnostic)
+        run: |
+          if ! pnpm run format:check; then
+            pnpm exec prettier --write artifacts/ai-chat-space/src/components/layout/adaptive-chat-layout.tsx
+            git diff -- artifacts/ai-chat-space/src/components/layout/adaptive-chat-layout.tsx
+            exit 1
+          fi
       - run: pnpm run check:api-routes
       - run: pnpm run typecheck
       - run: pnpm run test
