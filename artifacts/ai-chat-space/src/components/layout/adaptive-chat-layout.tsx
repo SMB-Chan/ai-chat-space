@@ -77,7 +77,10 @@ export function AdaptiveChatLayout({ children }: AdaptiveChatLayoutProps) {
     <div className="chatgpt-mobile-shell">
       <ChatLayout>{children}</ChatLayout>
 
-      <header className="chatgpt-mobile-topbar" aria-label="モバイルナビゲーション">
+      <header
+        className="chatgpt-mobile-topbar"
+        aria-label="モバイルナビゲーション"
+      >
         <button
           type="button"
           className="chatgpt-mobile-menu-button"
@@ -87,7 +90,11 @@ export function AdaptiveChatLayout({ children }: AdaptiveChatLayoutProps) {
           <Menu aria-hidden="true" />
         </button>
 
-        <div className="chatgpt-mobile-segment" role="tablist" aria-label="表示モード">
+        <div
+          className="chatgpt-mobile-segment"
+          role="tablist"
+          aria-label="表示モード"
+        >
           <button
             type="button"
             role="tab"
@@ -113,7 +120,9 @@ export function AdaptiveChatLayout({ children }: AdaptiveChatLayoutProps) {
         <section className="chatgpt-work-panel" aria-label="Work">
           <div className="chatgpt-work-list" role="list">
             {isLoading ? (
-              <div className="chatgpt-work-empty">作業履歴を読み込んでいます…</div>
+              <div className="chatgpt-work-empty">
+                作業履歴を読み込んでいます…
+              </div>
             ) : recentWork.length > 0 ? (
               recentWork.map((conversation) => {
                 const Icon = workIconForTitle(conversation.title ?? "");
@@ -123,7 +132,9 @@ export function AdaptiveChatLayout({ children }: AdaptiveChatLayoutProps) {
                     type="button"
                     role="listitem"
                     className="chatgpt-work-item"
-                    onClick={() => openChat(`/conversations/${conversation.id}`)}
+                    onClick={() =>
+                      openChat(`/conversations/${conversation.id}`)
+                    }
                   >
                     <span className="chatgpt-work-icon" aria-hidden="true">
                       <Icon />
@@ -131,7 +142,10 @@ export function AdaptiveChatLayout({ children }: AdaptiveChatLayoutProps) {
                     <span className="chatgpt-work-title">
                       {conversation.title || "無題の作業"}
                     </span>
-                    <ChevronRight className="chatgpt-work-chevron" aria-hidden="true" />
+                    <ChevronRight
+                      className="chatgpt-work-chevron"
+                      aria-hidden="true"
+                    />
                   </button>
                 );
               })
@@ -150,7 +164,9 @@ export function AdaptiveChatLayout({ children }: AdaptiveChatLayoutProps) {
             onClick={focusComposer}
             aria-label="Chatで新しい作業を始める"
           >
-            <span className="chatgpt-work-placeholder">ChatGPT と作業する</span>
+            <span className="chatgpt-work-placeholder">
+              ChatGPT と作業する
+            </span>
             <span className="chatgpt-work-composer-row">
               <span className="chatgpt-work-plus" aria-hidden="true">
                 <Plus />
@@ -218,22 +234,30 @@ export function AdaptiveChatLayout({ children }: AdaptiveChatLayoutProps) {
                   <button
                     key={conversation.id}
                     type="button"
-                    className={cn(activeId === conversation.id && "is-active")}
-                    onClick={() => openChat(`/conversations/${conversation.id}`)}
+                    className={cn(
+                      activeId === conversation.id && "is-active",
+                    )}
+                    onClick={() =>
+                      openChat(`/conversations/${conversation.id}`)
+                    }
                   >
                     <MessageSquareText />
                     <span>{conversation.title || "無題"}</span>
                   </button>
                 ))
               ) : (
-                <div className="chatgpt-mobile-menu-muted">まだ会話はありません</div>
+                <div className="chatgpt-mobile-menu-muted">
+                  まだ会話はありません
+                </div>
               )}
             </div>
 
             <button
               type="button"
               className="chatgpt-mobile-logout"
-              onClick={() => signOut({ redirectUrl: import.meta.env.BASE_URL || "/" })}
+              onClick={() =>
+                signOut({ redirectUrl: import.meta.env.BASE_URL || "/" })
+              }
             >
               <LogOut />
               <span>ログアウト</span>
