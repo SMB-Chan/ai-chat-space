@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  DEFAULT_HISTORY_TOKEN_BUDGET,
   budgetConversationHistory,
   resolveHistoryCharBudget,
+  resolveHistoryTokenBudget,
   truncateTextMiddle,
 } from "./history-budget";
 
@@ -18,10 +20,11 @@ function textTurns(texts: string[]): {
 describe("budgetConversationHistory", () => {
   it("keeps short histories untouched", () => {
     const history = textTurns(["こんにちは", "こんにちは！"]);
-    const result = budgetConversationHistory(history, { maxChars: 1000 });
+    const result = budgetConversationHistory(history, { maxTokens: 1000 });
     expect(result.messages).toEqual(history);
     expect(result.omittedTurnCount).toBe(0);
     expect(result.truncatedTurnCount).toBe(0);
+    expect(result.estimatedTokens).toBeLessThanOrEqual(result.maxTokens);
   });
 
   it("omits the oldest turns first and prepends an explicit notice", () => {
@@ -33,7 +36,7 @@ describe("budgetConversationHistory", () => {
       "E".repeat(500),
     ]);
     const result = budgetConversationHistory(history, {
-      maxChars: 1400,
+      maxTokens: 467,
       recentFullTurns: 2,
     });
 
@@ -47,6 +50,7 @@ describe("budgetConversationHistory", () => {
     expect(result.messages.at(-2)?.content).toBe("D".repeat(500));
     // The oldest surviving turn is abbreviated when it no longer fits.
     expect(String(result.messages.at(-3)?.content)).toContain("中略");
+    expect(result.estimatedTokens).toBeLessThanOrEqual(result.maxTokens);
   });
 
   it("abbreviates the turn that crosses the budget instead of dropping it", () => {
@@ -56,7 +60,7 @@ describe("budgetConversationHistory", () => {
       "新しい回答",
     ]);
     const result = budgetConversationHistory(history, {
-      maxChars: 4000,
+      maxTokens: 1334,
       recentFullTurns: 2,
     });
 
@@ -65,7 +69,7 @@ describe("budgetConversationHistory", () => {
     const truncated = String(result.messages[0]?.content);
     expect(truncated).toContain("旧コンテキスト");
     expect(truncated).toContain("中略");
-    expect(truncated.length).toBeLessThanOrEqual(3990);
+    expect(result.estimatedTokens).toBeLessThanOrEqual(result.maxTokens);
   });
 
   it("abbreviates array content by shrinking text parts and keeping images", () => {
@@ -81,7 +85,7 @@ describe("budgetConversationHistory", () => {
       { role: "assistant" as const, content: "回答" },
     ];
     const result = budgetConversationHistory(history, {
-      maxChars: 1200,
+      maxTokens: 400,
       recentFullTurns: 1,
     });
 
@@ -93,12 +97,21 @@ describe("budgetConversationHistory", () => {
     expect(content.some((part) => part.type === "image_url")).toBe(true);
     const textPart = content.find((part) => part.type === "text");
     expect(textPart?.text).toContain("中略");
+    expect(result.estimatedTokens).toBeLessThanOrEqual(result.maxTokens);
+  });
+
+  it("keeps the legacy maxChars option compatible", () => {
+    const history = textTurns(["A".repeat(500), "B".repeat(500)]);
+    const result = budgetConversationHistory(history, { maxChars: 1000 });
+    expect(result.maxTokens).toBe(334);
+    expect(result.estimatedTokens).toBeLessThanOrEqual(result.maxTokens);
   });
 
   it("is deterministic and never returns a negative budget result", () => {
     const history = textTurns(["".repeat(0), "x", "y"]);
-    const result = budgetConversationHistory(history, { maxChars: 8000 });
+    const result = budgetConversationHistory(history, { maxTokens: 2500 });
     expect(result.messages).toHaveLength(3);
+    expect(result.estimatedTokens).toBeGreaterThanOrEqual(0);
   });
 });
 
@@ -128,5 +141,26 @@ describe("resolveHistoryCharBudget", () => {
     expect(resolveHistoryCharBudget("99999999")).toBe(200000);
     expect(resolveHistoryCharBudget("12345")).toBe(12345);
     expect(resolveHistoryCharBudget("not-a-number")).toBeGreaterThan(0);
+  });
+});
+
+describe("resolveHistoryTokenBudget", () => {
+  it("uses the token budget as the primary configuration", () => {
+    expect(resolveHistoryTokenBudget("12000", "48000")).toBe(12000);
+  });
+
+  it("clamps token configuration to sane bounds", () => {
+    expect(resolveHistoryTokenBudget("1", undefined)).toBe(2500);
+    expect(resolveHistoryTokenBudget("99999999", undefined)).toBe(64000);
+  });
+
+  it("converts the legacy character env when token env is absent", () => {
+    expect(resolveHistoryTokenBudget(undefined, "48000")).toBe(16000);
+  });
+
+  it("uses the default when neither setting is configured", () => {
+    expect(resolveHistoryTokenBudget(undefined, undefined)).toBe(
+      DEFAULT_HISTORY_TOKEN_BUDGET,
+    );
   });
 });
