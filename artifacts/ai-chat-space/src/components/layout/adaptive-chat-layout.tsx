@@ -6,7 +6,6 @@ import {
   ArrowUp,
   BriefcaseBusiness,
   ChevronRight,
-  Github,
   Laptop,
   LogOut,
   Menu,
@@ -17,6 +16,7 @@ import {
   Shield,
   X,
 } from "lucide-react";
+import { FaGithub } from "react-icons/fa";
 import { ChatLayout } from "./chat-layout";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
@@ -30,7 +30,7 @@ type MobileMode = "chat" | "work";
 
 function workIconForTitle(title: string) {
   if (/github|git\b|repo|repository|pr\b|pull request/i.test(title)) {
-    return Github;
+    return FaGithub;
   }
   return Laptop;
 }
